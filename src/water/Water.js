@@ -38,16 +38,15 @@ const Water = ({plant}) => {
 
   return (
     <>
-      <h1>Water time <span role="img" aria-label="droplet">💧</span></h1>
+      <h1>Water time 💧</h1>
 
       <Plant plant={plant} />
 
-      <IconButton className="water-icon" onClick={handleWateredConfirmationOpen} aria-label='water'>
+      <IconButton onClick={handleWateredConfirmationOpen} aria-label='water'>
         <CheckCircleIcon />
       </IconButton>
 
       <Dialog
-        className="water-confirmation-dialog"
         open={open}
         onClose={handleWateredConfirmationClose}
       >
@@ -59,7 +58,7 @@ const Water = ({plant}) => {
         {!error && (
           <DialogActions>
             <Button onClick={handleWateredConfirmationClose} disabled={loading}>No</Button>
-            <Button id="yes-button" onClick={handleWateredConfirmed} disabled={loading}>Yes</Button>
+            <Button onClick={handleWateredConfirmed} disabled={loading}>Yes</Button>
           </DialogActions>
         )}
       </Dialog>
