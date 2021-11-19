@@ -9,11 +9,13 @@ import {
 import { MockedProvider } from '@apollo/client/testing'
 
 import PLANTS_TO_CARE_QUERY from './common/plantsToCare'
+import CLEAN_PLANT_MUTATION from './clean/CleanAPI'
 import WATER_PLANT_MUTATION from './water/WaterAPI'
+import { CARE_TYPES } from './common/constants'
 
 import App from './App'
 
-const plants_to_care_query_mock = {
+const plantsToCareQueryMock = {
   request: {
     query: PLANTS_TO_CARE_QUERY,
   },
@@ -24,7 +26,14 @@ const plants_to_care_query_mock = {
         name: 'Pancake plant',
         imageUrl: 'https://examples.com/pancake-plant.png',
         description: 'A plant that grows pancakes every morning',
-        __typename: 'PlantType',
+        careType: CARE_TYPES.WATER,
+      },
+      {
+        id: '2',
+        name: 'UFO plant',
+        imageUrl: 'https://examples.com/pancake-plant.png',
+        description: 'A plant that summons aliens',
+        careType: CARE_TYPES.CLEAN,
       }]
     }
   }
@@ -55,7 +64,7 @@ test('renders error sign on query error', async() => {
 })
 
 test('renders houseplants to care on success query', async() => {
-  const mocks = [plants_to_care_query_mock]
+  const mocks = [plantsToCareQueryMock]
 
   render(
     <MockedProvider mocks={mocks} addTypename={true}>
@@ -65,8 +74,11 @@ test('renders houseplants to care on success query', async() => {
   await waitFor(() => screen.getByText(/Pancake plant/i))
 })
 
-test('shows plant description when info icon is pressed', async() => {
-  const mocks = [plants_to_care_query_mock]
+test.each([
+  [0, /A plant that grows pancakes every morning/i],
+  [1, /A plant that summons aliens/i]
+])('shows plant description when info icon is pressed', async(plantIndex, expectedDescription) => {
+  const mocks = [plantsToCareQueryMock]
 
   render(
     <MockedProvider mocks={mocks} addTypename={true}>
@@ -75,50 +87,76 @@ test('shows plant description when info icon is pressed', async() => {
 
   await waitFor(() => screen.getByText(/Pancake plant/i))
 
-  fireEvent.click(screen.getByRole('button', { name: /info/i}))
+  fireEvent.click(screen.getAllByRole('button', { name: /info/i}).at(plantIndex))
 
-  await waitFor(() => screen.getByText(/A plant that grows pancakes every morning/i))
+  await waitFor(() => screen.getByText(expectedDescription))
 })
 
-test('shows watering confirmation when checkmark icon is pressed', async() => {
-  const mocks = [plants_to_care_query_mock]
+test.each([
+  [/Pancake plant/i, /water/i, /Watered?/i],
+  [/UFO plant/i, /clean/i, /Cleaned?/i],
+])('shows caring confirmation when checkmark icon is pressed', async(title, buttonName, careQuestion) => {
+  const mocks = [plantsToCareQueryMock]
 
   render(
     <MockedProvider mocks={mocks} addTypename={true}>
       <App />
     </MockedProvider>)
 
-  await waitFor(() => screen.getByText(/Pancake plant/i))
+  await waitFor(() => screen.getByText(title))
 
-  fireEvent.click(screen.getByRole('button', { name: /water/i}))
+  fireEvent.click(screen.getByRole('button', { name: buttonName}))
 
-  await waitFor(() => screen.getByText(/Watered?/i))
+  await waitFor(() => screen.getByText(careQuestion))
   await waitFor(() => screen.getByText(/No/i))
   await waitFor(() => screen.getByText(/Yes/i))
 })
 
-test('hides plant after watering', async() => {
-  const water_plant_mutation_mock = {
-    request: {
-      query: WATER_PLANT_MUTATION,
-      variables: { plantId: '1' },
-    },
-    result: {
-      data: {
-        waterPlant: {
-          wateringLog: {
-            plant: {
-              id: '1'
-            },
-            nextSuggestedDate: '2021-10-29',
-            waterDate: '2021-10-22'
-          }
+const waterPlantMutationMock = {
+  request: {
+    query: WATER_PLANT_MUTATION,
+    variables: { plantId: '1' },
+  },
+  result: {
+    data: {
+      waterPlant: {
+        wateringLog: {
+          plant: {
+            id: '1'
+          },
+          nextSuggestedDate: '2021-10-29',
+          waterDate: '2021-10-22'
         }
       }
     }
   }
+}
 
-  const plants_to_care_query_refetch_mock = {
+const cleanPlantMutationMock = {
+  request: {
+    query: CLEAN_PLANT_MUTATION,
+    variables: { plantId: '2' },
+  },
+  result: {
+    data: {
+      cleanPlant: {
+        cleaningLog: {
+          plant: {
+            id: '2'
+          },
+          nextSuggestedDate: '2021-10-29',
+          cleanDate: '2021-10-22'
+        }
+      }
+    }
+  }
+}
+
+test.each([
+  [/Pancake plant/i, /water/i, waterPlantMutationMock],
+  [/UFO plant/i, /clean/i, cleanPlantMutationMock],
+])('hides plant after caring', async(title, buttonName, mutationMock) => {
+  const plantsToCareQueryRefetchMock = {
     request: {
       query: PLANTS_TO_CARE_QUERY,
     },
@@ -130,9 +168,9 @@ test('hides plant after watering', async() => {
   }
 
   const mocks = [
-    plants_to_care_query_mock,
-    water_plant_mutation_mock,
-    plants_to_care_query_refetch_mock,
+    plantsToCareQueryMock,
+    mutationMock,
+    plantsToCareQueryRefetchMock,
   ]
 
   render(
@@ -140,29 +178,32 @@ test('hides plant after watering', async() => {
       <App />
     </MockedProvider>)
 
-  await waitFor(() => screen.getByText(/Pancake plant/i))
-  fireEvent.click(screen.getByRole('button', { name: /water/i}))
+  await waitFor(() => screen.getByText(title))
+  fireEvent.click(screen.getByRole('button', { name: buttonName}))
 
   await waitFor(() => screen.getByText(/Yes/i))
   fireEvent.click(screen.getByText(/Yes/i))
 
-  await waitForElementToBeRemoved(() => screen.queryByText(/Pancake plant/i))
+  await waitForElementToBeRemoved(() => screen.queryByText(title))
 })
 
-test('does not hide plant without watering', async() => {
-  const mocks = [plants_to_care_query_mock]
+test.each([
+  [/Pancake plant/i, /water/i],
+  [/UFO plant/i, /clean/i],
+])('does not hide plant if care has not been done', async(title, buttonName) => {
+  const mocks = [plantsToCareQueryMock]
 
   render(
     <MockedProvider mocks={mocks} addTypename={true}>
       <App />
     </MockedProvider>)
 
-  await waitFor(() => screen.getByText(/Pancake plant/i))
-  fireEvent.click(screen.getByRole('button', { name: /water/i}))
+  await waitFor(() => screen.getByText(title))
+  fireEvent.click(screen.getByRole('button', { name: buttonName }))
 
   await waitFor(() => screen.getByText(/No/i))
   fireEvent.click(screen.getByText(/No/i))
 
   await waitForElementToBeRemoved(() => screen.queryByText(/No/i))
-  await waitFor(() => screen.getByText(/Pancake plant/i))
+  await waitFor(() => screen.getByText(title))
 })

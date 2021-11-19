@@ -7,5 +7,6 @@ export default gql`
       name
       imageUrl
       description
+      careType
     }
   }`
