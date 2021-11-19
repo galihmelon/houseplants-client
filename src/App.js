@@ -18,10 +18,10 @@ function App() {
     <div className="App">
       <header className="App-header">Houseplants</header>
       {data && data.plantsToCare?.map((plant, i) =>
-        <>
-          {plant.careType === CARE_TYPES.WATER && <Water plant={plant} key={i} />}
-          {plant.careType === CARE_TYPES.CLEAN && <Clean plant={plant} key={i} />}
-        </>
+        <React.Fragment key={i}>
+          {plant.careType === CARE_TYPES.WATER && <Water plant={plant} />}
+          {plant.careType === CARE_TYPES.CLEAN && <Clean plant={plant} />}
+        </React.Fragment>
        )}
     </div>
   )
