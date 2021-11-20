@@ -9,8 +9,10 @@ import {
 import { MockedProvider } from '@apollo/client/testing'
 
 import PLANTS_TO_CARE_QUERY from './common/plantsToCare'
-import CLEAN_PLANT_MUTATION from './clean/CleanAPI'
-import WATER_PLANT_MUTATION from './water/WaterAPI'
+import {
+  CLEAN_PLANT_MUTATION,
+  WATER_PLANT_MUTATION,
+} from './care/CareAPI'
 import { CARE_TYPES } from './common/constants'
 
 import App from './App'
