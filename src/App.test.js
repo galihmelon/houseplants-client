@@ -77,9 +77,13 @@ test('renders houseplants to care on success query', async() => {
 })
 
 test.each([
-  [0, /A plant that grows pancakes every morning/i],
-  [1, /A plant that summons aliens/i]
-])('shows plant description when info icon is pressed', async(plantIndex, expectedDescription) => {
+  [0, /Pancake plant/i, /A plant that grows pancakes every morning/i],
+  [1, /UFO plant/i, /A plant that summons aliens/i]
+])('shows plant description when info icon is pressed', async(
+  plantIndex,
+  plantName,
+  expectedDescription,
+) => {
   const mocks = [plantsToCareQueryMock]
 
   render(
@@ -87,7 +91,7 @@ test.each([
       <App />
     </MockedProvider>)
 
-  await waitFor(() => screen.getByText(/Pancake plant/i))
+  await waitFor(() => screen.getByText(plantName))
 
   fireEvent.click(screen.getAllByRole('button', { name: /info/i}).at(plantIndex))
 
